@@ -58,6 +58,10 @@ class ZohoInvoicePortal(Portal):
     def popups(self) -> Sequence[Popup]:
         return ZOHO_POPUPS
 
+    @property
+    def job_key(self) -> str:
+        return f"{self.name}:invoice:{self.invoice.number}"
+
     def describe(self) -> str:
         return f"invoice {self.invoice.number} for {self.invoice.customer}"
 

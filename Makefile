@@ -1,4 +1,4 @@
-.PHONY: setup test lint format check-secrets run offline
+.PHONY: setup test lint format check-secrets run offline serve
 
 PY := .venv/bin/python
 
@@ -25,3 +25,6 @@ run:            ## run with inputs.json
 
 offline:        ## resolver on the saved Zoho pages, network off
 	$(PY) -m portal_runner offline tests/fixtures/*.html
+
+serve:          ## job API + UI on http://127.0.0.1:8000
+	$(PY) -m portal_runner serve --workers 2

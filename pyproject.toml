@@ -9,14 +9,18 @@ description = "Log into a portal with 2FA, reuse the session, fill a nested form
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "fastapi==0.115.0",
     "playwright==1.47.0",
+    "pydantic==2.9.2",
     "pyotp==2.9.0",
     "pypdf==5.1.0",
     "python-dotenv==1.0.1",
+    "uvicorn==0.30.6",
 ]
 
 [project.optional-dependencies]
 dev = [
+    "httpx==0.27.2",
     "pytest==8.3.3",
     "pytest-asyncio==0.24.0",
     "ruff==0.6.9",
@@ -29,10 +33,14 @@ portal-runner = "portal_runner.cli:main"
 [tool.setuptools.packages.find]
 include = ["portal_runner*"]
 
+[tool.setuptools.package-data]
+"portal_runner.service" = ["static/*"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+filterwarnings = ["ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning"]
 
 [tool.ruff]
 line-length = 120
@@ -47,7 +55,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101", "S105", "PLR0913"]
+"tests/*" = ["S101", "S105", "S106", "PLR0913"]
 
 [tool.mypy]
 python_version = "3.10"

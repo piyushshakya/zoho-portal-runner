@@ -10,6 +10,7 @@ from playwright.async_api import Locator, Page
 from portal_runner.core.actions import click
 from portal_runner.core.codes import CodeProvider, submit_with_one_retry
 from portal_runner.core.errors import FinalError, RetryableError
+from portal_runner.core.handoff import wait_for_human
 from portal_runner.portals.base import FlowContext
 from portal_runner.portals.zoho import targets
 from portal_runner.portals.zoho.config import ZohoConfig
@@ -30,9 +31,18 @@ async def _visible(loc: Locator) -> bool:
         return False
 
 
+async def _handle_captcha(ctx: FlowContext) -> None:
+    """Never solved automatically: handed to a person when the browser is visible, else a final error."""
+    captcha = ctx.page.get_by_placeholder(re.compile(r"enter captcha", re.I))
+    if not await _visible(captcha):
+        return
+    if ctx.human_wait_s <= 0:
+        raise FinalError("Zoho is showing a CAPTCHA; run with --headed to solve it by hand")
+    waited = await wait_for_human(ctx.page, lambda: _visible(captcha), "Zoho CAPTCHA", ctx.human_wait_s)
+    ctx.record.manifest.setdefault("human_handoffs", []).append({"challenge": "captcha", "waited_s": round(waited)})
+
+
 async def _fail_if_blocked(page: Page) -> None:
-    if await _visible(page.get_by_placeholder(re.compile(r"enter captcha", re.I))):
-        raise FinalError("Zoho is showing a CAPTCHA; automated login refused")
     if await _visible(page.get_by_text(re.compile(r"incorrect password|invalid password", re.I))):
         raise FinalError("Zoho rejected the password (check ZOHO_PASSWORD)")
 
@@ -79,6 +89,7 @@ async def _enter_credentials(ctx: FlowContext, config: ZohoConfig) -> None:
     await (await r.resolve(targets.LOGIN_PASSWORD, timeout=FIELD_TIMEOUT_S)).locator.fill(config.password)
     await click(page, (await r.resolve(targets.LOGIN_SIGN_IN)).locator, ctx.guard, targets.LOGIN_SIGN_IN.key)
     await page.wait_for_timeout(AFTER_SIGN_IN_MS)
+    await _handle_captcha(ctx)
     await _fail_if_blocked(page)
     await _choose_authenticator_method(page)
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import secrets
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -25,7 +26,8 @@ MAX_ERROR_CHARS = 2000
 
 class RunRecord:
     def __init__(self, root: Path, portal: str, inputs: dict[str, Any], redactor: Redactor) -> None:
-        self.id = datetime.now().strftime("%Y%m%d-%H%M%S")
+        # Random suffix: parallel runs can start in the same second.
+        self.id = f"{datetime.now():%Y%m%d-%H%M%S}-{secrets.token_hex(2)}"
         self.dir = Path(root) / self.id
         self.dir.mkdir(parents=True, exist_ok=True)
         self.redactor = redactor

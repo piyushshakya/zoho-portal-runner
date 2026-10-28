@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 CLICK_TIMEOUT_MS = 8000
 SETTLE_TIMEOUT_MS = 2500
 POLL_MS = 250
+DIAGNOSE_TIMEOUT_MS = 2000
 
 _COVER_JS = """
 (el) => {
@@ -35,7 +36,7 @@ _COVER_JS = """
 async def covering_element(locator: Locator) -> str | None:
     """Describe what is painted over the element's centre, or None."""
     try:
-        return await locator.evaluate(_COVER_JS)
+        return await locator.evaluate(_COVER_JS, timeout=DIAGNOSE_TIMEOUT_MS)
     except Exception as e:
         return f"unknown ({type(e).__name__})"
 

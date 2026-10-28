@@ -25,6 +25,7 @@ class FlowContext:
     guard: PopupGuard
     redactor: Redactor
     out_dir: Path
+    human_wait_s: float = 0  # > 0: a person can see the browser and solve challenges (CAPTCHA)
 
 
 class Portal(ABC):
@@ -47,6 +48,11 @@ class Portal(ABC):
     @property
     @abstractmethod
     def popups(self) -> Sequence[Popup]: ...
+
+    @property
+    @abstractmethod
+    def job_key(self) -> str:
+        """What makes two jobs the same work (e.g. one invoice number); such jobs never run concurrently."""
 
     @abstractmethod
     def describe(self) -> str:

@@ -5,6 +5,9 @@ the session on later runs, walks three pages deep to the **New Invoice** form, f
 JSON file, saves it, and **downloads the invoice PDF** that Zoho generates. Every run writes a
 JSON manifest; every failure writes a redacted evidence bundle.
 
+Extra credit: a **job API with a queue and a small UI** that runs several invoices in parallel
+while sharing one login, **proxy routing**, and **CAPTCHA hand-off** to a person (section 8).
+
 ```
 inputs.json ─► session saved? ──yes─► still alive? ──yes──────────────┐
                     │ no                  │ no                         ▼
@@ -24,6 +27,7 @@ inputs.json ─► session saved? ──yes─► still alive? ──yes──�
 source .venv/bin/activate
 make test                       # offline tests, no account needed
 python -m portal_runner --headed
+python -m portal_runner serve   # optional: job queue + UI on http://127.0.0.1:8000
 ```
 
 ---
@@ -66,6 +70,7 @@ On Linux, if Chromium fails to start, run `.venv/bin/python -m playwright instal
 | `ZOHO_TOTP_SECRET` | yes | The setup key from step 2.3 (spaces allowed) |
 | `ZOHO_DC` | no | Data centre: `in` (default), `com`, `eu`, `com.au`, ... |
 | `REDACT_NAMES` | no | Your display name(s), comma-separated, scrubbed from evidence |
+| `PROXY_URL` | no | e.g. `http://user:pass@proxy.example.com:8080`; the password is redacted everywhere |
 
 `.env` is git-ignored and never leaves your machine.
 
@@ -83,6 +88,8 @@ python -m portal_runner --inputs examples/inputs.customer_b.json
 | `--headed` | Show the browser window |
 | `--slow-mo MS` | Pause before every browser action |
 | `--fresh-login` | Ignore the saved session and log in again |
+| `--proxy URL` | Route all browser traffic through a proxy (or set `PROXY_URL`) |
+| `--captcha-wait S` | With `--headed`: how long you have to solve a CAPTCHA by hand (default 180 s) |
 | `--break TARGET` | Make one element unfindable on purpose (e.g. `detail.pdf_print`) to see retries and the evidence bundle |
 | `--trace` | Record a replayable Playwright trace (`playwright show-trace runs/<id>/trace-1.zip`). It contains your password and cookies: never share it |
 
@@ -140,11 +147,71 @@ Samples from real runs: [`examples/sample-run/`](examples/sample-run) and
 ## 7. Tests and quality
 
 ```bash
-make test           # 83 offline tests (real Zoho pages saved as fixtures, no network)
+make test           # 106 offline tests (real Zoho pages saved as fixtures, no network)
 make lint           # ruff format + ruff lint + mypy
 make offline        # resolver on the saved Zoho pages
 make check-secrets  # also runs automatically before every git commit
 ```
+
+## 8. Extra credit
+
+### Job service: API, queue, parallel runs, UI
+
+```bash
+python -m portal_runner serve --workers 2
+```
+
+Open <http://127.0.0.1:8000>, fill in an invoice, click **Queue job**, and watch it move through
+its stages; the PDF and manifest links appear when it is done. Interactive API docs are at
+`/docs`.
+
+| Endpoint | What it does |
+|---|---|
+| `POST /api/jobs` | Submit the same JSON as `inputs.json`. Validated immediately (`422` with the reason if not); `202` with the job id otherwise; `429` if the queue is full |
+| `GET /api/jobs` | Recent jobs with their status |
+| `GET /api/jobs/{id}` | One job with its stages, live while it runs |
+| `GET /api/jobs/{id}/manifest` | The run's manifest |
+| `GET /api/jobs/{id}/document` | The PDF |
+
+```bash
+curl -X POST localhost:8000/api/jobs -H 'Content-Type: application/json' -d @examples/inputs.customer_b.json
+```
+
+How it works:
+
+* Jobs are stored in **SQLite** (`state/jobs.db`) before they are queued. If the service stops,
+  queued and interrupted jobs run again on the next start (the flow is idempotent, so a
+  half-finished job is safe to repeat).
+* `--workers N` jobs run **at the same time**, each in its own browser.
+* **One login for everyone:** jobs for the same account share a lock around "check session /
+  log in". The first job logs in and saves the session; the others wait a moment and reuse it.
+  Without this, parallel jobs would all log in at once and send the same TOTP code twice.
+* **Never the same invoice twice at once:** jobs with the same invoice number are serialized,
+  so two clicks cannot create a duplicate.
+* Each run keeps its own `run.log` even when runs overlap (log records are tagged by run).
+* Verified live: two jobs ran in parallel with one shared login, and a repeated invoice number
+  waited for the first job instead of running twice. A reused-session job takes about 22 s.
+* The service listens on `127.0.0.1` only and has no authentication: it is a local tool. Put
+  it behind an authenticating proxy before exposing it.
+
+### Proxy routing
+
+Set `PROXY_URL=http://user:pass@host:port` in `.env` (or pass `--proxy`). All browser traffic,
+login included, goes through it; the manifest records the proxy host, and the password is
+redacted from every output.
+
+### CAPTCHA hand-off
+
+The program never solves a CAPTCHA itself: automated solving defeats a site's protection and
+breaks its terms. Instead, when Zoho shows one during a `--headed` run, the program pauses, logs
+*"please solve it in the browser window"*, waits up to `--captcha-wait` seconds for a person,
+and then continues the login. The hand-off is recorded in the manifest. In headless runs a
+CAPTCHA is a final error that says to re-run with `--headed`.
+
+### Not done on purpose: fingerprint hardening
+
+Hiding that the browser is automated is an arms race with the site and usually against its
+terms. The only change made is a regular Chrome user agent in headless mode.
 
 ---
 
@@ -230,9 +297,10 @@ Next steps, in order:
 1. **Targets as data** (YAML per portal) with a recorder that captures and sanitizes fixtures,
    so adding a portal is mostly configuration, and each portal gets its offline mutation tests
    automatically.
-2. **A job queue and worker pool** around `Runner`, with per-portal concurrency limits and rate
-   limits, session files in a secret store instead of on disk, and a code provider per
-   challenge type (TOTP, IMAP, SMS webhook).
+2. **Scale the job service out** (section 8 already has the queue, workers and shared-login
+   lock): a shared queue (Postgres or Redis) with worker processes on several machines,
+   per-portal concurrency and rate limits, session files in a secret store instead of on disk,
+   and a code provider per challenge type (TOTP, IMAP, SMS webhook).
 3. **Scheduled canary runs** against every portal, so a front-end change shows up as an alert,
    with the resolver's strategy-win history showing which elements are drifting.
 
@@ -243,6 +311,7 @@ Next steps, in order:
 ```
 portal_runner/
   cli.py, runner.py          command line and the run lifecycle
+  service/                   job API (FastAPI), SQLite store, worker pool, static UI
   core/                      portal-agnostic engine
     codes.py                 TOTP provider, one-retry rule
     resolver.py              the five-strategy element resolver
@@ -251,11 +320,12 @@ portal_runner/
     popups.py, actions.py    popup guard, clicks that explain failures
     record.py, evidence.py   manifest, evidence bundle
     redact.py, documents.py  redaction, PDF text and fingerprint
+    proxy.py, handoff.py     proxy settings, CAPTCHA hand-off to a person
     offline.py, mutate.py    resolver on saved HTML, HTML mutation tool
   portals/
     base.py                  the Portal interface
     zoho/                    targets, login, invoice flow, popups, inputs, config
-tests/                       83 offline tests; fixtures are sanitized real Zoho pages
+tests/                       106 offline tests; fixtures are sanitized real Zoho pages
 tools/                       capture_fixture.py, check_secrets.py, pre-commit hook
 examples/                    alternative inputs, a sample run, a sample failure bundle
 ```
@@ -277,8 +347,8 @@ examples/                    alternative inputs, a sample run, a sample failure 
 | `error: missing in .env: ...` | Fill in `.env` (section 4) |
 | `the TOTP secret is not valid base32` | Copy the setup key again; letters A–Z and digits 2–7 only |
 | `2FA: code rejected` twice | Check your computer's clock is set automatically (TOTP depends on it) |
-| `Zoho is showing a CAPTCHA` | Log in once by hand in a normal browser, then run again |
-| `customer '...' is not in the dropdown` | Create that customer in Zoho, or fix `inputs.json` |
+| `Zoho is showing a CAPTCHA` | Re-run with `--headed` and solve it in the window when asked |
+| `... (no exact match)` | The customer or item name must match Zoho exactly (upper/lower case is ignored): check the spelling, or create it in Zoho |
 | A run fails | Open `runs/<id>/evidence/screenshot.png` and `error.json` |
 | Anything else | Run with `--headed --slow-mo 500` to watch, or `--trace` to replay step by step |
 
@@ -286,4 +356,5 @@ examples/                    alternative inputs, a sample run, a sample failure 
 
 * One portal (Zoho Invoice) is implemented; the structure is ready for more.
 * Closed shadow roots cannot be scrubbed from inside the page; the screenshot masking still applies.
-* Headless runs present a regular Chrome user agent; there is no further fingerprint hardening.
+* Headless runs present a regular Chrome user agent; there is no further fingerprint hardening (on purpose, see section 8).
+* The job service has no authentication and binds to localhost only.

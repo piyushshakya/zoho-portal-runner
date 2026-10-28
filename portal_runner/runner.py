@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import contextlib
+import contextvars
 import logging
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -14,6 +17,7 @@ from playwright.async_api import Browser, BrowserContext, Page, ViewportSize, as
 from portal_runner.core.errors import ExitCode
 from portal_runner.core.evidence import write_bundle
 from portal_runner.core.popups import PopupGuard
+from portal_runner.core.proxy import parse_proxy
 from portal_runner.core.record import RunRecord
 from portal_runner.core.redact import RedactingFilter, Redactor
 from portal_runner.core.resolver import Resolver
@@ -25,6 +29,8 @@ log = logging.getLogger(__name__)
 RESOLVE_TIMEOUT_S = 15
 VIEWPORT: ViewportSize = {"width": 1440, "height": 900}
 LOG_FORMAT = "%(asctime)s %(levelname)-5s %(name)s %(message)s"
+# The run a log record belongs to: keeps each run.log separate when runs execute in parallel.
+CURRENT_RUN: contextvars.ContextVar[str] = contextvars.ContextVar("current_run", default="-")
 
 
 @dataclass(frozen=True)
@@ -37,13 +43,24 @@ class RunOptions:
     fresh_login: bool = False
     trace: bool = False
     broken: frozenset[str] = frozenset()
+    proxy: str | None = None  # http://user:pass@host:port
+    captcha_wait_s: int = 180  # how long a person may take to solve a CAPTCHA (headed runs only)
 
 
 class Runner:
-    def __init__(self, portal: Portal, inputs: dict[str, Any], options: RunOptions) -> None:
+    def __init__(
+        self,
+        portal: Portal,
+        inputs: dict[str, Any],
+        options: RunOptions,
+        session_lock: asyncio.Lock | None = None,
+    ) -> None:
         self.portal = portal
         self.options = options
-        self.redactor = Redactor(portal.secrets)
+        # Shared by parallel runs of one account, so only one of them logs in.
+        self.session_lock = session_lock
+        self.proxy = parse_proxy(options.proxy) if options.proxy else None
+        self.redactor = Redactor([*portal.secrets, (self.proxy or {}).get("password")])
         self.record = RunRecord(options.runs_dir, portal.name, inputs, self.redactor)
         state = options.state or Path("state") / f"{portal.name}.json"
         self.store = SessionStore(state, portal.session_rules.cookie_domain)
@@ -62,9 +79,11 @@ class Runner:
                 self.record.manifest["broken_on_purpose"] = sorted(self.options.broken)
             if self.options.fresh_login:
                 self.store.discard("--fresh-login")
+            if self.proxy:
+                self.record.manifest["proxy"] = self.proxy["server"]
             async with async_playwright() as pw:
                 self.browser = await pw.chromium.launch(
-                    headless=not self.options.headed, slow_mo=self.options.slow_mo_ms
+                    headless=not self.options.headed, slow_mo=self.options.slow_mo_ms, proxy=self.proxy
                 )
                 try:
                     return await self._run()
@@ -74,14 +93,8 @@ class Runner:
 
     async def _run(self) -> ExitCode:
         try:
-            verdict = await self.record.step("session.check", self._check_session)
-            if verdict.alive:
-                self.record.visit("dashboard", self._page.url)
-            else:
-                self.store.discard(verdict.reason)
-                await self._open_context()
-                await self.record.step("login", self._login, attempts=2, reset=self._clear_cookies)
-                await self.store.save(self._context)
+            async with self.session_lock or contextlib.nullcontext():
+                await self._ensure_logged_in()
             document = await self.portal.run(self._flow_context())
             await self.store.save(self._context)  # keep refreshed cookies for next time
         except Exception as e:
@@ -90,6 +103,16 @@ class Runner:
         reused = "reused" if self.record.manifest["session"]["reused"] else "fresh login"
         print(f"\nOK  {document}  ({self.record.elapsed_ms / 1000:.1f}s, session {reused})\n    manifest: {manifest}")
         return ExitCode.OK
+
+    async def _ensure_logged_in(self) -> None:
+        verdict = await self.record.step("session.check", self._check_session)
+        if verdict.alive:
+            self.record.visit("dashboard", self._page.url)
+            return
+        self.store.discard(verdict.reason)
+        await self._open_context()
+        await self.record.step("login", self._login, attempts=2, reset=self._clear_cookies)
+        await self.store.save(self._context)
 
     async def _check_session(self) -> Verdict:
         verdict = self.store.preflight()
@@ -163,7 +186,10 @@ class Runner:
         self.context = self.page = None
 
     def _flow_context(self) -> FlowContext:
-        return FlowContext(self._page, self._resolver, self.record, self.guard, self.redactor, self.options.out_dir)
+        human_wait_s = self.options.captcha_wait_s if self.options.headed else 0
+        return FlowContext(
+            self._page, self._resolver, self.record, self.guard, self.redactor, self.options.out_dir, human_wait_s
+        )
 
     @property
     def _page(self) -> Page:
@@ -185,10 +211,13 @@ class Runner:
 
     @contextmanager
     def _run_log(self) -> Iterator[None]:
-        """Write runs/<id>/run.log and redact every log line for the duration of the run."""
+        """Write runs/<id>/run.log (this run's records only) and redact every log line meanwhile."""
+        run_id = self.record.id
+        token = CURRENT_RUN.set(run_id)
         root = logging.getLogger()
         file_handler = logging.FileHandler(self.record.dir / "run.log", encoding="utf-8")
         file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        file_handler.addFilter(lambda record: CURRENT_RUN.get() == run_id)
         root.addHandler(file_handler)
         redacting = RedactingFilter(self.redactor)
         for handler in root.handlers:
@@ -200,3 +229,4 @@ class Runner:
                 handler.removeFilter(redacting)
             root.removeHandler(file_handler)
             file_handler.close()
+            CURRENT_RUN.reset(token)

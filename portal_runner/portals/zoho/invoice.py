@@ -30,7 +30,8 @@ VALUE_POLL_MS = 250
 NAV_CLICK_TIMEOUT_MS = 2500
 LIST_WAIT_S = 6
 FORM_WAIT_S = 20
-OPTION_TIMEOUT_MS = 10_000
+OPTION_POLLS = 40  # x VALUE_POLL_MS = 10 s for the dropdown to show the option
+MAX_OPTIONS = 30
 EXISTING_LINK_MS = 3000
 SEARCH_FOCUS_MS = 300
 SEARCH_RESULT_MS = 6000
@@ -62,6 +63,24 @@ async def row_fields(page: Page, row: int) -> tuple[Locator, Locator] | None:
     )
 
 
+async def find_option(page: Page, text: str) -> Locator | None:
+    """The visible dropdown option with a line equal to ``text`` (case-insensitive).
+
+    Exact, not "contains": Zoho also offers entries such as "Add 'Consulting Hour' as a new
+    item", and picking one of those silently creates a blank item with no rate.
+    """
+    wanted = text.strip().casefold()
+    options = page.get_by_role("option")
+    for i in range(min(await options.count(), MAX_OPTIONS)):
+        option = options.nth(i)
+        if not await option.is_visible():
+            continue
+        lines = {line.strip().casefold() for line in (await option.inner_text()).splitlines()}
+        if wanted in lines:
+            return option
+    return None
+
+
 def verify_invoice_text(text: str, inv: InvoiceInput) -> list[str]:
     """Problems found when checking the PDF text against the inputs (empty = all good)."""
     flat = flatten(text)
@@ -70,6 +89,8 @@ def verify_invoice_text(text: str, inv: InvoiceInput) -> list[str]:
         problems.append(f"invoice number {inv.number} missing")
     if inv.customer.lower() not in flat.lower():
         problems.append(f"customer {inv.customer!r} missing")
+    if zoho_date(inv.invoice_date) not in flat:
+        problems.append(f"invoice date {zoho_date(inv.invoice_date)} missing")
     for item in inv.items:
         qty = f"{item.quantity:,.2f}"
         # name, then its quantity, not glued to other digits (1.00 must not match 11.00)
@@ -122,13 +143,14 @@ class InvoiceFlow:
         await self.page.reload(wait_until="domcontentloaded")
 
     async def pick_option(self, text: str, what: str) -> None:
-        """Choose ``text`` from the open dropdown (Zoho's custom listbox)."""
-        option = self.page.get_by_role("option").filter(has_text=re.compile(re.escape(text), re.I)).first
-        try:
-            await option.wait_for(state="visible", timeout=OPTION_TIMEOUT_MS)
-        except Exception:
-            raise FinalError(f"{what} {text!r} is not in the dropdown; check inputs.json") from None
-        await click(self.page, option, self.ctx.guard, f"{what} option {text!r}")
+        """Choose exactly ``text`` from the open dropdown (Zoho's custom listbox)."""
+        for _ in range(OPTION_POLLS):
+            option = await find_option(self.page, text)
+            if option is not None:
+                await click(self.page, option, self.ctx.guard, f"{what} option {text!r}")
+                return
+            await self.page.wait_for_timeout(VALUE_POLL_MS)
+        raise FinalError(f"{what} {text!r} is not in the dropdown (no exact match); check inputs.json")
 
     async def type_and_pick(self, t: Target, text: str, what: str) -> Locator:
         box = await self.resolve(t)
@@ -206,9 +228,7 @@ class InvoiceFlow:
         self.manifest["dependent_fields"] = []  # fresh on every attempt
         await self.type_and_pick(targets.CUSTOMER, self.inv.customer, "customer")
         await self.set_number()
-        date_box = await self.resolve(targets.INVOICE_DATE)
-        await date_box.fill(zoho_date(self.inv.invoice_date))
-        await date_box.press("Tab")
+        await self.set_invoice_date()
         await self.set_terms()
         for row, item in enumerate(self.inv.items):
             await self.add_item(row, item)
@@ -222,6 +242,15 @@ class InvoiceFlow:
         await box.press("Tab")
         await self.page.wait_for_timeout(VALUE_POLL_MS * 2)
         await self.ctx.guard.dismiss_any(self.page)
+
+    async def set_invoice_date(self) -> None:
+        want = zoho_date(self.inv.invoice_date)
+        box = await self.resolve(targets.INVOICE_DATE)
+        await box.fill(want)
+        await box.press("Tab")
+        got = await self.poll_value(box, lambda v: v == want)
+        if got != want:  # read back: the date picker can silently keep its own value
+            raise RetryableError(f"Invoice Date reads {got!r}, expected {want}")
 
     async def set_terms(self) -> None:
         """Terms drive Due Date (dependent field): pick terms, then wait for Zoho to recompute."""
@@ -251,6 +280,8 @@ class InvoiceFlow:
         item_target, quantity_target = targets.item_targets(row)
         box = await self.resolve(item_target)
         tagged = await tag_row(box, row)
+        if await box.input_value():  # only on a retry: clearing focuses the box and Zoho re-renders it
+            await box.fill("")
         await click(self.page, box, self.ctx.guard, item_target.key)
         await self.page.keyboard.type(item.name, delay=TYPE_DELAY_MS)
         await self.pick_option(item.name, f"item[{row}]")

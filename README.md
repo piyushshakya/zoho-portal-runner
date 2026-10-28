@@ -189,6 +189,8 @@ How it works:
 * **Never the same invoice twice at once:** jobs with the same invoice number are serialized,
   so two clicks cannot create a duplicate.
 * Each run keeps its own `run.log` even when runs overlap (log records are tagged by run).
+* Verified live: two jobs ran in parallel with one shared login, and a repeated invoice number
+  waited for the first job instead of running twice. A reused-session job takes about 22 s.
 * The service listens on `127.0.0.1` only and has no authentication: it is a local tool. Put
   it behind an authenticating proxy before exposing it.
 
@@ -346,7 +348,7 @@ examples/                    alternative inputs, a sample run, a sample failure 
 | `the TOTP secret is not valid base32` | Copy the setup key again; letters A–Z and digits 2–7 only |
 | `2FA: code rejected` twice | Check your computer's clock is set automatically (TOTP depends on it) |
 | `Zoho is showing a CAPTCHA` | Re-run with `--headed` and solve it in the window when asked |
-| `customer '...' is not in the dropdown` | Create that customer in Zoho, or fix `inputs.json` |
+| `... (no exact match)` | The customer or item name must match Zoho exactly (upper/lower case is ignored): check the spelling, or create it in Zoho |
 | A run fails | Open `runs/<id>/evidence/screenshot.png` and `error.json` |
 | Anything else | Run with `--headed --slow-mo 500` to watch, or `--trace` to replay step by step |
 

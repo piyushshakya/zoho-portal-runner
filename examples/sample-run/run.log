@@ -1,0 +1,50 @@
+2026-10-29 01:37:00,697 INFO  portal_runner.runner run 20261029-013700: invoice ASSIGN-000104 for Test Customer B
+2026-10-29 01:37:00,698 INFO  portal_runner.core.session session: discarded (--fresh-login) -> zoho_invoice.dead.json
+2026-10-29 01:37:01,266 INFO  portal_runner.core.record stage session.check          start
+2026-10-29 01:37:01,266 INFO  portal_runner.runner session: DEAD (no saved session)
+2026-10-29 01:37:01,267 INFO  portal_runner.core.record stage session.check          ok in 0.0s
+2026-10-29 01:37:01,506 INFO  portal_runner.core.record stage login                  start
+2026-10-29 01:37:04,125 INFO  portal_runner.core.resolver resolver: login.email              -> role      (role=textbox name~'Email address or mobile number', main)
+2026-10-29 01:37:04,188 INFO  portal_runner.core.resolver resolver: login.next               -> role      (role=button name~'Next', main)
+2026-10-29 01:37:04,314 INFO  portal_runner.core.resolver resolver: login.password           -> label     (placeholder~'Enter password', main)
+2026-10-29 01:37:04,371 INFO  portal_runner.core.resolver resolver: login.sign_in            -> css       (css #nextbtn, main)
+2026-10-29 01:37:06,214 INFO  portal_runner.core.record stage login.second_factor    start
+2026-10-29 01:37:06,261 INFO  portal_runner.core.resolver resolver: login.totp               -> structure (structure input[autocomplete='one-time-code'] #0, main)
+2026-10-29 01:37:06,268 INFO  portal_runner.core.resolver resolver: login.verify             -> role      (role=button name~'Verify', main)
+2026-10-29 01:37:06,268 INFO  portal_runner.core.codes 2FA: code generated (portal=zoho, attempt=1)
+2026-10-29 01:37:07,649 INFO  portal_runner.core.codes 2FA: accepted on attempt 1
+2026-10-29 01:37:07,649 INFO  portal_runner.core.record stage login.second_factor    ok in 1.4s
+2026-10-29 01:37:07,686 INFO  portal_runner.core.popups popup: handling trust_this_browser
+2026-10-29 01:37:11,529 INFO  portal_runner.core.resolver resolver: nav.invoices             -> role      (role=link name~'Invoices', main)
+2026-10-29 01:37:11,530 INFO  portal_runner.core.record stage login                  ok in 10.0s
+2026-10-29 01:37:11,771 INFO  portal_runner.core.session session: saved to state/zoho_invoice.json
+2026-10-29 01:37:11,771 INFO  portal_runner.core.record stage navigate.invoices      start
+2026-10-29 01:37:11,791 INFO  portal_runner.core.resolver resolver: nav.invoices             -> role      (role=link name~'Invoices', main)
+2026-10-29 01:37:14,342 WARNING portal_runner.core.actions click on nav.invoices blocked; on top: <div class=main-nav-lhs> "Home Customers Items Quotes Invoices Delivery Challans Payments Received Expense"
+2026-10-29 01:37:14,397 INFO  portal_runner.core.actions activated nav.invoices with the keyboard instead
+2026-10-29 01:37:15,126 INFO  portal_runner.core.record stage navigate.invoices      ok in 3.4s
+2026-10-29 01:37:15,126 INFO  portal_runner.core.record stage find_existing          start
+2026-10-29 01:37:25,176 INFO  portal_runner.core.record stage find_existing          ok in 10.1s
+2026-10-29 01:37:25,177 INFO  portal_runner.core.record stage navigate.new_invoice   start
+2026-10-29 01:37:25,208 INFO  portal_runner.core.resolver resolver: invoices.new             -> role      (role=button name~'New', main)
+2026-10-29 01:37:25,695 INFO  portal_runner.core.resolver resolver: invoice.customer         -> role      (role=combobox name~'Customer Name', main)
+2026-10-29 01:37:25,695 INFO  portal_runner.core.record stage navigate.new_invoice   ok in 0.5s
+2026-10-29 01:37:25,695 INFO  portal_runner.core.record stage fill_form              start
+2026-10-29 01:37:25,704 INFO  portal_runner.core.resolver resolver: invoice.customer         -> role      (role=combobox name~'Customer Name', main)
+2026-10-29 01:37:26,572 INFO  portal_runner.core.resolver resolver: invoice.number           -> role      (role=textbox name~'Invoice#', main)
+2026-10-29 01:37:27,156 INFO  portal_runner.core.popups popup: handling invoice_number_preferences
+2026-10-29 01:37:27,906 INFO  portal_runner.core.resolver resolver: invoice.date             -> role      (role=textbox name~'Invoice Date', main)
+2026-10-29 01:37:27,982 INFO  portal_runner.core.resolver resolver: invoice.terms            -> role      (role=combobox name~'Terms', main)
+2026-10-29 01:37:28,140 INFO  portal_runner.core.resolver resolver: invoice.due_date         -> role      (role=textbox name~'Due Date', main)
+2026-10-29 01:37:28,152 INFO  portal_runner.core.resolver resolver: invoice.item[0]          -> role      (role=combobox name~'Type or click to select an item.', main)
+2026-10-29 01:37:28,976 INFO  portal_runner.core.resolver resolver: invoice.add_row          -> role      (role=link name~'Add New Row', main)
+2026-10-29 01:37:29,104 INFO  portal_runner.core.resolver resolver: invoice.item[1]          -> structure (structure textarea[placeholder='Type or click to select an item.'] #1, main)
+2026-10-29 01:37:30,169 INFO  portal_runner.core.record stage fill_form              ok in 4.5s
+2026-10-29 01:37:30,170 INFO  portal_runner.core.record stage save                   start
+2026-10-29 01:37:30,185 INFO  portal_runner.core.resolver resolver: invoice.save_draft       -> role      (role=button name~'Save as Draft', main)
+2026-10-29 01:37:31,154 INFO  portal_runner.core.record stage save                   ok in 1.0s
+2026-10-29 01:37:31,154 INFO  portal_runner.core.record stage capture.pdf            start
+2026-10-29 01:37:31,223 INFO  portal_runner.core.resolver resolver: detail.pdf_print         -> near_text (text~'PDF/Print' +2 up, main)
+2026-10-29 01:37:31,334 INFO  portal_runner.core.resolver resolver: detail.pdf_option        -> structure (structure .dropdown-menu.show a, .dropdown-menu.show button #0, main)
+2026-10-29 01:37:31,885 INFO  portal_runner.core.record stage capture.pdf            ok in 0.7s
+2026-10-29 01:37:31,966 INFO  portal_runner.core.session session: saved to state/zoho_invoice.json

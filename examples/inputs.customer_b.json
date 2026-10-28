@@ -1,0 +1,13 @@
+{
+  "portal": "zoho_invoice",
+  "invoice": {
+    "number": "ASSIGN-000104",
+    "customer": "Test Customer B",
+    "invoice_date": "2026-10-15",
+    "terms": "Net 30",
+    "items": [
+      {"name": "Window AC", "quantity": 1},
+      {"name": "Ceiling Fan", "quantity": 3}
+    ]
+  }
+}

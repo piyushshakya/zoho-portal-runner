@@ -1,0 +1,232 @@
+{
+  "stage": "capture.pdf",
+  "error_type": "ResolveError",
+  "message": "could not resolve 'detail.pdf_print' (role=none, label=none, near_text=none, near_text=none, near_text=none, near_text=none, near_text=none, structure=none, css=none)",
+  "retryable": true,
+  "attempts": 3,
+  "target": "detail.pdf_print",
+  "resolver_attempts": [
+    {
+      "strategy": "role",
+      "detail": "role=button name~'__broken_on_purpose__'",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "role",
+      "detail": "role=button name~'__broken_on_purpose__'",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "role",
+      "detail": "role=button name~'__broken_on_purpose__'",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "role",
+      "detail": "role=button name~'__broken_on_purpose__'",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "label",
+      "detail": "label~'__broken_on_purpose__'",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "label",
+      "detail": "label~'__broken_on_purpose__'",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "label",
+      "detail": "label~'__broken_on_purpose__'",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "label",
+      "detail": "label~'__broken_on_purpose__'",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +1 up",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +2 up",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +3 up",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +4 up",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +5 up",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +1 up",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +2 up",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +3 up",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +4 up",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +5 up",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +1 up",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +2 up",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +3 up",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +4 up",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +5 up",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +1 up",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +2 up",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +3 up",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +4 up",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "near_text",
+      "detail": "text~'__broken_on_purpose__' +5 up",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "structure",
+      "detail": "structure [data-__broken_on_purpose__] #0",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "structure",
+      "detail": "structure [data-__broken_on_purpose__] #0",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "structure",
+      "detail": "structure [data-__broken_on_purpose__] #0",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "structure",
+      "detail": "structure [data-__broken_on_purpose__] #0",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "css",
+      "detail": "css #__broken_on_purpose__",
+      "frame": "main",
+      "outcome": "none"
+    },
+    {
+      "strategy": "css",
+      "detail": "css #__broken_on_purpose__",
+      "frame": "iframe[avcliqiframe]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "css",
+      "detail": "css #__broken_on_purpose__",
+      "frame": "iframe[https://tipengine.zoho.in/Notification?O]",
+      "outcome": "none"
+    },
+    {
+      "strategy": "css",
+      "detail": "css #__broken_on_purpose__",
+      "frame": "iframe[micssdktoserverIframe]",
+      "outcome": "none"
+    }
+  ],
+  "url": "https://invoice.zoho.in/app#/invoices/[ID]",
+  "redaction": {
+    "shadow_roots_scrubbed": 1,
+    "leftovers_after_scrub": [],
+    "frames_not_scriptable": []
+  }
+}

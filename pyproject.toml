@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portal-runner"
+version = "1.0.0"
+description = "Log into a portal with 2FA, reuse the session, fill a nested form and capture the document it produces."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "playwright==1.47.0",
+    "pyotp==2.9.0",
+    "pypdf==5.1.0",
+    "python-dotenv==1.0.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==8.3.3",
+    "pytest-asyncio==0.24.0",
+    "ruff==0.6.9",
+    "mypy==1.11.2",
+]
+
+[project.scripts]
+portal-runner = "portal_runner.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["portal_runner*"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF", "C4", "PT", "N", "S", "PL", "ASYNC"]
+ignore = [
+    "PLR0913",  # flow functions legitimately take several collaborators
+    "PLR2004",  # small literals in tests and regexes read better inline
+    "S110",     # best-effort cleanup paths swallow errors on purpose
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "PLR0913"]
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+ignore_missing_imports = true

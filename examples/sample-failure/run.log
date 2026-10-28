@@ -1,0 +1,24 @@
+2026-10-29 01:34:05,726 INFO  portal_runner.runner run 20261029-013405: invoice ASSIGN-000101 for Test Customer A
+2026-10-29 01:34:05,726 WARNING portal_runner.runner --break: deliberately unfindable: detail.pdf_print
+2026-10-29 01:34:06,034 INFO  portal_runner.core.record stage session.check          start
+2026-10-29 01:34:09,211 INFO  portal_runner.core.resolver resolver: nav.invoices             -> role      (role=link name~'Invoices', main)
+2026-10-29 01:34:09,212 INFO  portal_runner.runner session: REUSED (app shell rendered with logged-in navigation)
+2026-10-29 01:34:09,212 INFO  portal_runner.core.record stage session.check          ok in 3.2s
+2026-10-29 01:34:09,212 INFO  portal_runner.core.record stage navigate.invoices      start
+2026-10-29 01:34:09,230 INFO  portal_runner.core.resolver resolver: nav.invoices             -> role      (role=link name~'Invoices', main)
+2026-10-29 01:34:11,575 INFO  portal_runner.core.record stage navigate.invoices      ok in 2.4s
+2026-10-29 01:34:11,575 INFO  portal_runner.core.record stage find_existing          start
+2026-10-29 01:34:12,753 INFO  portal_runner.core.record stage find_existing          ok in 1.2s
+2026-10-29 01:34:12,753 INFO  portal_runner.core.record stage capture.pdf            start
+2026-10-29 01:34:32,769 WARNING portal_runner.core.resolver resolver: detail.pdf_print NOT FOUND after 36 attempts
+2026-10-29 01:34:32,770 INFO  portal_runner.core.record stage capture.pdf            failed in 20.0s
+2026-10-29 01:34:32,770 WARNING portal_runner.core.retry capture.pdf: attempt 1/3 failed (ResolveError), retrying in 0.9s
+2026-10-29 01:34:34,944 INFO  portal_runner.core.record stage capture.pdf            start
+2026-10-29 01:34:55,328 WARNING portal_runner.core.resolver resolver: detail.pdf_print NOT FOUND after 36 attempts
+2026-10-29 01:34:55,329 INFO  portal_runner.core.record stage capture.pdf            failed in 20.4s
+2026-10-29 01:34:55,329 WARNING portal_runner.core.retry capture.pdf: attempt 2/3 failed (ResolveError), retrying in 1.8s
+2026-10-29 01:34:58,248 INFO  portal_runner.core.record stage capture.pdf            start
+2026-10-29 01:35:18,451 WARNING portal_runner.core.resolver resolver: detail.pdf_print NOT FOUND after 36 attempts
+2026-10-29 01:35:18,452 INFO  portal_runner.core.record stage capture.pdf            failed in 20.2s
+2026-10-29 01:35:18,452 ERROR portal_runner.core.retry capture.pdf: giving up after 3 attempts (ResolveError)
+2026-10-29 01:35:18,648 ERROR portal_runner.core.evidence evidence bundle written to runs/20261029-013405/evidence

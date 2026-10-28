@@ -1,0 +1,13 @@
+{
+  "portal": "zoho_invoice",
+  "invoice": {
+    "number": "ASSIGN-000101",
+    "customer": "Test Customer A",
+    "invoice_date": "2026-10-29",
+    "terms": "Net 15",
+    "items": [
+      {"name": "Consulting hour", "quantity": 2}
+    ],
+    "notes": "Thanks for your business."
+  }
+}
